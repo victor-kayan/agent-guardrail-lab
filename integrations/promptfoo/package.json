@@ -1,0 +1,12 @@
+{
+  "name": "agent-guardrail-lab-promptfoo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Optional local evaluation runner for Agent Guardrail Lab",
+  "scripts": {
+    "eval": "promptfoo eval -c promptfooconfig.yaml --no-cache"
+  },
+  "devDependencies": {
+    "promptfoo": "0.126.0"
+  }
+}
