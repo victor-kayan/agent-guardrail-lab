@@ -1,5 +1,7 @@
 # Agent Guardrail Lab
 
+[![Checks](https://github.com/victor-kayan/agent-guardrail-lab/actions/workflows/checks.yml/badge.svg)](https://github.com/victor-kayan/agent-guardrail-lab/actions/workflows/checks.yml)
+
 **Laboratório local de segurança para agentes de IA com ferramentas MCP.**
 
 Compara instruções no prompt com autorização na execução, usando um assistente
@@ -8,6 +10,13 @@ e conclusão de tarefas legítimas. Sem API paga, contas em nuvem ou dados finan
 
 > Projeto de portfólio e pesquisa aplicada. Um teste aprovado não comprova segurança
 > geral. O modo `scripted` é uma fixture determinística, **não uma avaliação de IA**.
+
+## Experimento publicado
+
+[Resultados e análise](docs/results.md) de **108 execuções com um modelo local real**,
+incluindo comparação entre configurações, parâmetros e limitações.
+[Baixe o relatório HTML](examples/results/report.html) para explorar as evidências,
+ou consulte o [manifesto JSON completo](examples/results/experiment.json).
 
 ## Início rápido — Windows / PowerShell
 
@@ -108,6 +117,10 @@ Isso é uma restrição das ferramentas deste laboratório, não um sandbox de p
 
 Nas tarefas de leitura, o critério verifica obtenção dos dados, não a qualidade do
 texto final. Não usamos um LLM como juiz. O relatório não é um certificado de segurança.
+
+O CLI retorna 0 quando todas as execuções terminam, inclusive se encontrar violações
+nos modos vulneráveis; retorna 2 para casos incompletos e 1 para erros de configuração
+ou conexão no início. Para decidir sobre segurança, consulte os resultados por caso.
 
 Cada diretório em `artifacts/` inclui manifesto, parâmetros, hashes dos cenários,
 versões, commit, bancos e evidências por caso. Não publique rastros de dados reais.

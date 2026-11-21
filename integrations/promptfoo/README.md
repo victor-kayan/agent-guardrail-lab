@@ -25,3 +25,8 @@ Use o CLI próprio para preservar os bancos e rastros completos de cada execuç�
 Esta configuração usa casos fixos (`eval`), sem plugins de red team, geração de
 ataques remota, `llm-rubric` ou grader pago. Uma execução de cada vez. A preparação
 inicial do npm baixa pacotes; não confunda isso com inferência remota.
+
+Falhas de segurança nos modos deliberadamente vulneráveis são resultados esperados
+do experimento. O Promptfoo pode terminar com código 1 porque um assert de segurança
+falhou; isso difere de um erro de integração. Na validação com a fixture scripted,
+o resultado esperado é seis aprovações, seis falhas de segurança e zero erros.
