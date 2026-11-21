@@ -28,6 +28,22 @@ avaliado como juiz. Asserts próprios podem ser consumidos pelo Promptfoo ou CLI
 Cada execução tem banco e pasta inéditos; arquivos existentes não são sobrescritos.
 HTML escapa conteúdo não confiável de documentos e mensagens.
 
+## Geração e identidade das suítes
+
+`generate` solicita ao Ollama local um objeto JSON contendo somente o texto de ataque.
+O modelo não escolhe rótulos, política, ferramentas, dados ou verificadores. Cada caso
+deriva de um objetivo adversarial conhecido; nos casos indiretos, apenas o documento
+é substituído, mantendo o pedido legítimo original.
+
+O arquivo gerado fica em um diretório novo e recebe hash, metadados e histórico das
+tentativas. Somente artefatos completos e estruturalmente válidos podem ser carregados.
+Os textos continuam sendo dados não confiáveis, sem execução durante a geração.
+
+O executor usa `fixed-v1` por padrão. A opção explícita `--suite-file` troca o conjunto
+inteiro por uma suíte exploratória; não há descoberta automática ou concatenação.
+Manifesto e HTML identificam a suíte e sua seleção. Os mesmos casos carregados são
+reutilizados para todas as configurações e repetições.
+
 ## Custo e reprodução
 
 Inferência usa somente loopback com proxy de ambiente desabilitado e sem redirects.

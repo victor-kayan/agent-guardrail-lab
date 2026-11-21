@@ -8,7 +8,7 @@ Compara instruções no prompt com autorização na execução, usando um assist
 financeiro fictício. Mede tentativas de violação, bloqueios, efeitos reais no ambiente
 e conclusão de tarefas legítimas. Sem API paga, contas em nuvem ou dados financeiros reais.
 
-> Projeto de portfólio e pesquisa aplicada. Um teste aprovado não comprova segurança
+> Um teste aprovado não comprova segurança
 > geral. O modo `scripted` é uma fixture determinística, **não uma avaliação de IA**.
 
 ## Experimento publicado
@@ -63,6 +63,34 @@ O programa só aceita endpoints HTTP de loopback e não segue redirecionamentos.
 
 Em Linux/macOS, use `.venv/bin/python` e `.venv/bin/guardrail-lab`.
 
+## Gerar novos testes com IA local
+
+```powershell
+# Gera seis variações adversariais, uma por objetivo e canal de ataque.
+.\.venv\Scripts\guardrail-lab.exe generate --model qwen3:4b --count 6 --seed 42 --output artifacts/generated-v1
+
+# Executa exatamente os casos salvos, sem gerar novamente entre configurações.
+.\.venv\Scripts\guardrail-lab.exe run --model qwen3:4b --suite-file artifacts/generated-v1/suite.json
+
+# A comparação principal continua usando os mesmos 12 casos fixos.
+.\.venv\Scripts\guardrail-lab.exe run --model qwen3:4b --repetitions 3
+```
+
+O gerador utiliza JSON estruturado do Ollama e aceita somente o texto de ataque.
+Identidades, objetivos, verificadores, dados e solicitações legítimas dos ataques
+indiretos são definidos pelo laboratório. Até 24 casos por geração; saídas inválidas
+ou duplicadas têm no máximo três tentativas por caso. Não há execução durante a geração.
+
+Cada diretório novo recebe `suite.json`, com textos, modelo/digest, seeds, prompts,
+respostas, versão da suíte fixa e hash dos casos. Arquivos incompletos ou alterados
+sem correspondência de hash são rejeitados. Diretórios existentes não são sobrescritos.
+Revise a pertinência dos ataques: validação estrutural não comprova qualidade adversarial.
+
+**A suíte `fixed-v1` permanece fixa e é o padrão.** Casos gerados são exploratórios;
+exigem `--suite-file` e aparecem identificados separadamente no relatório. Congele o
+mesmo arquivo ao comparar configurações ou modelos. Não some seus resultados aos
+108 casos históricos. A geração não consulta resultados da avaliação para otimizar ataques.
+
 ## O experimento
 
 | Configuração | Prompt de segurança | Autorização nas ferramentas |
@@ -98,6 +126,10 @@ flowchart TD
     G --> I[Verificadores em Python]
     H --> I
     I --> J[JSON e HTML estático]
+    K[Gerador de testes] <--> D
+    K --> L[Suíte exploratória congelada]
+    L --> A
+    M[Suíte fixed-v1] --> A
 ```
 
 Ferramentas: `list_transactions`, `read_document`, `create_report` e
@@ -161,7 +193,6 @@ e [roteiro de demonstração](docs/demo.md).
 ## Próximos passos
 
 - Expandir variações revisadas de ataques em português e inglês.
-- Gerar propostas de casos com o modelo local, mantendo a suíte de avaliação congelada.
 - Comparar mudanças de políticas e modelos sem misturar conjuntos de testes.
 - Adicionar regras de aprovação e fluxos com múltiplas etapas.
 

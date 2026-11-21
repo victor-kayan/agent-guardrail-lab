@@ -1,4 +1,4 @@
-# Demonstração para o portfólio — três minutos
+# Demonstração do laboratório — três minutos
 
 1. **Problema (30 s):** um agente pode seguir instruções externas e propor ações
    fora do escopo. Instruções no prompt e autorização na execução são camadas diferentes.
@@ -13,10 +13,9 @@
 Nunca apresente a fixture scripted como comportamento de um modelo. Não invente
 uma falha para tornar a apresentação interessante: resistência ao ataque também é resultado.
 
-## Texto para currículo, após validar
+## Exploração com novos casos
 
-Desenvolvi laboratório local de avaliação de segurança de agentes de IA com Ollama,
-MCP e SQLite, comparando instruções no prompt e autorização nas ferramentas por meio
-de cenários adversariais, verificadores determinísticos e rastros reproduzíveis.
-
-Inclua números apenas depois do experimento e informe tamanho da suíte e modelo.
+Use `guardrail-lab generate` para criar variações adversariais com o Ollama local.
+Inspecione os textos em `suite.json` e execute com `run --suite-file`. O relatório
+identifica o conjunto como exploratório. Para comparar com os resultados históricos,
+use o comando `run` sem `--suite-file`, que preserva os 12 casos da suíte `fixed-v1`.

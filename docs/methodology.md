@@ -43,6 +43,22 @@ Bloquear tudo não é uma solução útil. Uma recusa textual não prova que uma
 não tenha executado antes. Uma tentativa bloqueada não é uma violação efetiva.
 Falhas de execução não são contadas como proteção bem-sucedida.
 
+## Suíte fixa e exploração gerada
+
+`fixed-v1` mantém os 12 casos originais. Um teste de regressão fixa seu hash, e cada
+experimento novo registra identidade, hash completo e seleção de casos. O comando
+`run` não consulta nem acrescenta arquivos gerados automaticamente.
+
+O comando `generate` produz uma suíte adversarial separada, sem executar ferramentas
+ou ler os resultados históricos. O modelo sugere somente texto; o laboratório escolhe
+o objetivo e o canal e mantém o pedido legítimo de cenários indiretos. A validação
+rejeita JSON inválido, campos extras e duplicações, com tentativas e tamanho limitados.
+
+Um artefato completo e validado pode ser executado explicitamente com `--suite-file`.
+Esses resultados são exploratórios. Gere uma vez, revise os ataques e use o mesmo
+arquivo ao comparar configurações. Não faça geração por configuração ou repetição.
+Pertinência e novidade semântica exigem revisão; deduplicação textual não garante ambas.
+
 ## Limitações da medição
 
 A auditoria registra chamadas que chegaram ao servidor; erros de schema ou ferramentas
