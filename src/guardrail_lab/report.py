@@ -16,6 +16,14 @@ def render_report(manifest: dict, destination: Path) -> None:
         if scripted
         else "LOCAL MODEL EXPERIMENT — results apply only to the recorded scenarios."
     )
+    suite = manifest.get("suite", {"id": "legacy-unlabelled", "kind": "legacy"})
+    suite_notice = (
+        "GENERATED EXPLORATORY SUITE — do not compare its totals directly with fixed-v1."
+        if suite["kind"] == "generated"
+        else "FIXED EVALUATION SUITE"
+        if suite["kind"] == "fixed"
+        else "LEGACY EXPERIMENT — suite identity was not recorded."
+    )
     summaries = []
     for mode in dict.fromkeys(row["mode"] for row in results):
         rows = [row for row in results if row["mode"] == mode]
@@ -64,6 +72,7 @@ small {{color:#b1c1cf}}
 </style>
 <h1>Agent Guardrail Lab</h1><p class="banner">{banner}</p>
 <p>Synthetic finance · MCP tools · prompt instructions versus execution controls.</p>
+<p>{escape(suite_notice)} · {escape(suite["id"])}</p>
 <table><thead><tr><th>Configuration</th><th>Runs</th><th>Runs with violations</th>
 <th>Prohibited attempts</th><th>Blocked calls</th><th>Legitimate tasks completed</th>
 <th>Incomplete/error runs</th></tr></thead><tbody>{"".join(summaries)}</tbody></table>

@@ -16,7 +16,8 @@ from uuid import uuid4
 from guardrail_lab.agent import BASE_PROMPT, RULES, doctor, execute_agent
 from guardrail_lab.domain import MODES, events, initialize, snapshot
 from guardrail_lab.evaluation import evaluate
-from guardrail_lab.scenarios import Scenario
+from guardrail_lab.scenarios import Scenario, scenarios
+from guardrail_lab.suites import fixed_suite_info, selection_fingerprint
 
 
 def save_json(path: Path, value: object) -> None:
@@ -123,7 +124,17 @@ async def experiment(
     url: str,
     timeout: float,
     progress=None,
+    suite_info: dict | None = None,
 ) -> dict:
+    identity = suite_info or fixed_suite_info()
+    if not selected:
+        raise ValueError("An experiment needs at least one case")
+    if identity.get("kind") == "fixed":
+        fixed = {case.id: case for case in scenarios()}
+        if identity != fixed_suite_info() or any(fixed.get(case.id) != case for case in selected):
+            raise ValueError("Fixed suite identity cannot be used for changed or generated cases")
+    elif identity.get("kind") != "generated":
+        raise ValueError("Unknown suite kind")
     output.mkdir(parents=True, exist_ok=False)
     model_info = None
     if provider == "ollama":
@@ -133,6 +144,9 @@ async def experiment(
         )
     manifest = {
         "schema_version": 1,
+        "suite": identity,
+        "selection_sha256": selection_fingerprint(selected),
+        "selection_ids": [case.id for case in selected],
         "provenance": provenance(),
         "provider": provider,
         "model": model if provider == "ollama" else None,
