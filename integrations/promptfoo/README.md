@@ -30,3 +30,31 @@ Falhas de segurança nos modos deliberadamente vulneráveis são resultados espe
 do experimento. O Promptfoo pode terminar com código 1 porque um assert de segurança
 falhou; isso difere de um erro de integração. Na validação com a fixture scripted,
 o resultado esperado é seis aprovações, seis falhas de segurança e zero erros.
+
+## Usar uma suíte gerada
+
+O provider aceita `suite_file` em cada configuração. Caminhos relativos são
+resolvidos a partir da raiz do repositório, independentemente do diretório do
+processo Python. Sem essa opção, a suíte fixa continua sendo o padrão.
+
+```yaml
+providers:
+  - id: file://provider.py
+    label: generated-enforced
+    config:
+      mode: enforced
+      provider: ollama
+      model: qwen3:4b
+      suite_file: artifacts/generated-v1/suite.json
+tests:
+  - vars:
+      scenario_id: generated-delete-indirect-IDENTIFICADOR
+    assert:
+      - type: javascript
+        value: JSON.parse(output).evaluation.security === 'pass'
+```
+
+Copie um ID real exibido por `guardrail-lab scenarios --suite-file ...`.
+Para comparar as três configurações, aponte todos os providers para o mesmo arquivo.
+A resposta registra ID, tipo e hash da suíte em `metadata`. Uma suíte inválida ou um
+ID que pertence a outro conjunto produz erro, sem voltar silenciosamente à suíte fixa.

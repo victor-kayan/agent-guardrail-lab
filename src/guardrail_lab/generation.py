@@ -1,6 +1,7 @@
 """Bounded local attack generation. Produces data, never executable tools or code."""
 
 import json
+import math
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -9,6 +10,7 @@ import httpx
 from guardrail_lab.agent import doctor, local_url
 from guardrail_lab.runner import provenance
 from guardrail_lab.scenarios import scenarios
+from guardrail_lab.storage import save_json
 from guardrail_lab.suites import (
     GENERATED_SCHEMA_VERSION,
     MAX_ATTACK_LENGTH,
@@ -72,9 +74,7 @@ def generation_request(parent, variation: int, retry: int) -> str:
 
 
 def checkpoint(path: Path, payload: dict) -> None:
-    temporary = path.with_suffix(".tmp")
-    temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    temporary.replace(path)
+    save_json(path, payload)
 
 
 async def generate_suite(
@@ -86,8 +86,10 @@ async def generate_suite(
     timeout: float = 90,
     progress=None,
 ) -> dict:
-    if not 1 <= count <= MAX_CASES or timeout <= 0:
-        raise ValueError(f"Count must be 1..{MAX_CASES} and timeout must be positive")
+    if type(count) is not int or not 1 <= count <= MAX_CASES:
+        raise ValueError(f"Count must be an integer between 1 and {MAX_CASES}")
+    if not math.isfinite(timeout) or timeout <= 0:
+        raise ValueError("Timeout must be finite and positive")
     if output.exists():
         raise ValueError(
             "Output directory already exists; use a new directory to freeze each suite"

@@ -1,8 +1,9 @@
-"""CLI: guardrail-lab doctor | scenarios | generate | run | report."""
+"""Local generation, inspection, execution, comparison and reporting commands."""
 
 import argparse
 import asyncio
 import json
+import math
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -11,12 +12,13 @@ from uuid import uuid4
 import httpx
 
 from guardrail_lab.agent import doctor
+from guardrail_lab.comparison import compare_files
 from guardrail_lab.domain import MODES
 from guardrail_lab.generation import generate_suite
 from guardrail_lab.report import render_report
 from guardrail_lab.runner import experiment
-from guardrail_lab.scenarios import scenarios
-from guardrail_lab.suites import fixed_suite_info, load_generated_suite
+from guardrail_lab.storage import read_json
+from guardrail_lab.suites import describe_suite, load_suite
 
 
 def main() -> None:
@@ -32,7 +34,15 @@ def main() -> None:
     ]:
         command.add_argument("--model", default="qwen3:4b")
         command.add_argument("--url", default="http://127.0.0.1:11434")
-    commands.add_parser("scenarios", help="List the fixed scenario suite")
+    listing = commands.add_parser("scenarios", help="Inspect fixed or generated scenarios")
+    listing.add_argument("--suite-file", type=Path)
+    listing.add_argument("--show-text", action="store_true", help="Print prompts and documents")
+    listing.add_argument("--json", action="store_true", dest="as_json")
+    compare = commands.add_parser("compare", help="Compare compatible experiment manifests")
+    compare.add_argument("baseline", type=Path)
+    compare.add_argument("candidate", type=Path)
+    compare.add_argument("--output", type=Path, required=True)
+    compare.add_argument("--fail-on-regression", action="store_true")
     report = commands.add_parser("report", help="Regenerate HTML from an existing experiment")
     report.add_argument("manifest", type=Path)
     run = commands.choices["run"]
@@ -60,10 +70,31 @@ def main() -> None:
             if not result["available"]:
                 sys.exit(1)
         elif args.command == "scenarios":
-            for case in scenarios():
-                print(f"{case.id:22} {case.kind:12} {case.goal}")
+            cases, identity = load_suite(args.suite_file)
+            description = describe_suite(cases, identity)
+            if args.as_json:
+                if args.show_text:
+                    description["texts"] = [case.to_dict() for case in cases]
+                print(json.dumps(description, indent=2, ensure_ascii=False))
+            else:
+                print(f"Suite: {identity['id']} ({identity['kind']}) — {len(cases)} cases")
+                print(f"SHA256: {identity['sha256']}")
+                print(f"Coverage: {json.dumps(description['coverage'], sort_keys=True)}")
+                for case in cases:
+                    print(f"{case.id:22} {case.kind:12} {case.goal}")
+                    if args.show_text:
+                        print(f"  Prompt: {case.prompt}\n  Document: {case.document}")
+        elif args.command == "compare":
+            result = compare_files(args.baseline, args.candidate, args.output)
+            print(
+                f"Paired runs: {result['paired_runs']}; "
+                f"regression runs: {result['regression_runs']}"
+            )
+            print(f"Report: {(args.output / 'comparison.html').resolve()}")
+            if args.fail_on_regression and result["regression_runs"]:
+                sys.exit(3)
         elif args.command == "report":
-            manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
+            manifest = read_json(args.manifest)
             destination = args.manifest.with_name("report.html")
             render_report(manifest, destination)
             print(destination.resolve())
@@ -88,13 +119,9 @@ def main() -> None:
                 "Review generated text before interpreting results."
             )
         else:
-            if args.repetitions < 1 or args.timeout <= 0:
-                parser.error("repetitions and timeout must be positive")
-            available, suite_info = (
-                load_generated_suite(args.suite_file)
-                if args.suite_file
-                else (scenarios(), fixed_suite_info())
-            )
+            if args.repetitions < 1 or not math.isfinite(args.timeout) or args.timeout <= 0:
+                parser.error("repetitions must be positive and timeout must be finite and positive")
+            available, suite_info = load_suite(args.suite_file)
             selected = [case for case in available if not args.scenario or case.id in args.scenario]
             if args.scenario and set(args.scenario) - {case.id for case in selected}:
                 parser.error("Unknown scenario ID for the selected suite")

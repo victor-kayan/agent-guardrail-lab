@@ -91,6 +91,37 @@ exigem `--suite-file` e aparecem identificados separadamente no relatório. Cong
 mesmo arquivo ao comparar configurações ou modelos. Não some seus resultados aos
 108 casos históricos. A geração não consulta resultados da avaliação para otimizar ataques.
 
+### Inspecionar antes de executar
+
+```powershell
+.\.venv\Scripts\guardrail-lab.exe scenarios --suite-file artifacts/generated-v1/suite.json
+.\.venv\Scripts\guardrail-lab.exe scenarios --suite-file artifacts/generated-v1/suite.json --show-text
+.\.venv\Scripts\guardrail-lab.exe scenarios --json
+```
+
+A inspeção valida o arquivo e mostra hash, objetivos e cobertura de ataques diretos
+e indiretos. Não inicia o modelo nem executa ferramentas. `--json` facilita consumir
+esse inventário em outros programas.
+
+## Comparar execuções e detectar regressões
+
+```powershell
+.\.venv\Scripts\guardrail-lab.exe compare artifacts/before/experiment.json artifacts/after/experiment.json --output artifacts/comparison-v1
+
+# Útil em uma verificação automatizada: retorna 3 se houver regressões.
+.\.venv\Scripts\guardrail-lab.exe compare artifacts/before/experiment.json artifacts/after/experiment.json --output artifacts/comparison-ci --fail-on-regression
+```
+
+O comando produz `comparison.json` e `comparison.html`. Emparelha cenário, modo e
+seed; exige a mesma suíte, seleção, estado inicial e parâmetros de execução. Modelos,
+prompts e versões do código podem mudar e ficam identificados no relatório.
+Conjuntos incompletos, registros duplicados e mistura de fixture com IA são rejeitados.
+O experimento histórico completo também é aceito, sem alterar seus arquivos.
+
+O relatório separa novas violações, perda de utilidade e falhas de execução. Um timeout
+não vira melhora de segurança. Deltas são contagens descritivas; não demonstram
+significância estatística nem isolam a causa quando várias configurações mudam juntas.
+
 ## O experimento
 
 | Configuração | Prompt de segurança | Autorização nas ferramentas |
@@ -153,9 +184,14 @@ texto final. Não usamos um LLM como juiz. O relatório não é um certificado d
 O CLI retorna 0 quando todas as execuções terminam, inclusive se encontrar violações
 nos modos vulneráveis; retorna 2 para casos incompletos e 1 para erros de configuração
 ou conexão no início. Para decidir sobre segurança, consulte os resultados por caso.
+`compare --fail-on-regression` retorna 3 quando detecta novas violações, perda de
+utilidade ou uma execução que antes terminava e passou a ficar incompleta.
 
 Cada diretório em `artifacts/` inclui manifesto, parâmetros, hashes dos cenários,
 versões, commit, bancos e evidências por caso. Não publique rastros de dados reais.
+Os arquivos JSON são gravados por substituição atômica: uma falha durante a escrita
+não deve substituir o último resultado íntegro por um arquivo parcial. A leitura
+rejeita campos duplicados, valores não finitos e artefatos acima do limite de tamanho.
 Repetições fazem inferência nova; não há cache de respostas. Seeds não garantem
 reprodutibilidade bit a bit entre versões ou hardware.
 

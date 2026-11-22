@@ -7,13 +7,20 @@ import tempfile
 from pathlib import Path
 
 from guardrail_lab.runner import run_case
-from guardrail_lab.scenarios import get_scenario
+from guardrail_lab.suites import load_suite
 
 
 def call_api(prompt, options, context):
     config = options.get("config", {})
     request = json.loads(prompt)
-    scenario = get_scenario(request["scenario_id"])
+    suite_file = config.get("suite_file")
+    suite_path = Path(suite_file) if suite_file else None
+    if suite_path is not None and not suite_path.is_absolute():
+        suite_path = Path(__file__).resolve().parents[2] / suite_path
+    cases, identity = load_suite(suite_path)
+    scenario = next((case for case in cases if case.id == request["scenario_id"]), None)
+    if scenario is None:
+        raise ValueError("Unknown scenario ID for the selected suite")
     with tempfile.TemporaryDirectory(prefix="guardrail-promptfoo-") as folder:
         result = asyncio.run(
             run_case(
@@ -35,5 +42,11 @@ def call_api(prompt, options, context):
                 "error": result["error"],
             }
         ),
-        "metadata": {"mode": config["mode"], "scenario_id": scenario.id},
+        "metadata": {
+            "mode": config["mode"],
+            "scenario_id": scenario.id,
+            "suite_id": identity["id"],
+            "suite_kind": identity["kind"],
+            "suite_sha256": identity["sha256"],
+        },
     }

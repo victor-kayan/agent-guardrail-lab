@@ -246,3 +246,18 @@ def test_generated_manifest_and_report_are_distinct(tmp_path):
     report = tmp_path / "report.html"
     render_report(manifest, report)
     assert "GENERATED EXPLORATORY SUITE" in report.read_text(encoding="utf-8")
+
+
+def test_suite_inspection_shows_coverage_without_model_calls(tmp_path, monkeypatch, capsys):
+    from guardrail_lab import cli
+
+    path = tmp_path / "suite.json"
+    write_suite(path)
+    monkeypatch.setattr(
+        "sys.argv", ["guardrail-lab", "scenarios", "--suite-file", str(path), "--json"]
+    )
+    cli.main()
+    summary = json.loads(capsys.readouterr().out)
+    assert summary["case_count"] == 1
+    assert summary["suite"]["kind"] == "generated"
+    assert summary["coverage"] == {"delete": {"indirect": 1}}

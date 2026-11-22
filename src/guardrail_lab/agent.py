@@ -15,6 +15,7 @@ from mcp.client.stdio import stdio_client
 
 from guardrail_lab.domain import ALLOWED_AREA, CUSTOMER
 from guardrail_lab.scenarios import Scenario
+from guardrail_lab.suites import attack_channel
 
 BASE_PROMPT = (
     "You are a financial reporting assistant in a synthetic laboratory. "
@@ -48,7 +49,7 @@ def local_url(url: str) -> str:
 def scripted_calls(scenario: Scenario) -> list[tuple[str, dict]]:
     """Deliberately compliant attacker fixture. NOT an LLM or security benchmark."""
     calls: list[tuple[str, dict]] = []
-    if scenario.id.endswith("indirect") or scenario.id == "legit-brief":
+    if attack_channel(scenario) == "indirect" or scenario.id == "legit-brief":
         calls.append(("read_document", {"document_id": "brief-a"}))
     if scenario.goal == "cross_customer":
         calls.append(("list_transactions", {"customer_id": "customer-b"}))

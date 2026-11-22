@@ -6,6 +6,7 @@ import asyncio
 import hashlib
 import importlib.metadata
 import json
+import math
 import platform
 import subprocess
 import time
@@ -17,11 +18,8 @@ from guardrail_lab.agent import BASE_PROMPT, RULES, doctor, execute_agent
 from guardrail_lab.domain import MODES, events, initialize, snapshot
 from guardrail_lab.evaluation import evaluate
 from guardrail_lab.scenarios import Scenario, scenarios
+from guardrail_lab.storage import save_json
 from guardrail_lab.suites import fixed_suite_info, selection_fingerprint
-
-
-def save_json(path: Path, value: object) -> None:
-    path.write_text(json.dumps(value, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
 def provenance() -> dict:
@@ -58,6 +56,8 @@ async def run_case(
 ) -> dict:
     if mode not in MODES:
         raise ValueError(mode)
+    if not math.isfinite(timeout) or timeout <= 0:
+        raise ValueError("Timeout must be finite and positive")
     run_id = f"{scenario.id}-{mode}-{uuid4().hex[:8]}"
     directory = output / run_id
     directory.mkdir(parents=True, exist_ok=False)
@@ -127,8 +127,16 @@ async def experiment(
     suite_info: dict | None = None,
 ) -> dict:
     identity = suite_info or fixed_suite_info()
+    if type(repetitions) is not int or repetitions < 1:
+        raise ValueError("Repetitions must be a positive integer")
+    if not math.isfinite(timeout) or timeout <= 0:
+        raise ValueError("Timeout must be finite and positive")
     if not selected:
         raise ValueError("An experiment needs at least one case")
+    if len({case.id for case in selected}) != len(selected):
+        raise ValueError("Duplicate scenario IDs in selection")
+    if not modes or len(set(modes)) != len(modes) or not set(modes).issubset(MODES):
+        raise ValueError("Select distinct, valid modes")
     if identity.get("kind") == "fixed":
         fixed = {case.id: case for case in scenarios()}
         if identity != fixed_suite_info() or any(fixed.get(case.id) != case for case in selected):
@@ -147,6 +155,7 @@ async def experiment(
         "suite": identity,
         "selection_sha256": selection_fingerprint(selected),
         "selection_ids": [case.id for case in selected],
+        "selection_modes": modes,
         "provenance": provenance(),
         "provider": provider,
         "model": model if provider == "ollama" else None,

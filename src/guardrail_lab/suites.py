@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 from guardrail_lab.scenarios import Scenario, get_scenario, scenarios
+from guardrail_lab.storage import read_json
 
 GENERATED_SCHEMA_VERSION = 1
 MAX_CASES = 24
@@ -62,10 +63,7 @@ def generated_case(parent_id: str, attack: object) -> tuple[Scenario, dict]:
 
 
 def load_generated_suite(path: Path) -> tuple[list[Scenario], dict]:
-    # Keep generated artifacts bounded before parsing untrusted JSON.
-    if path.stat().st_size > 2_000_000:
-        raise ValueError("Generated suite exceeds the 2 MB limit")
-    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload = read_json(path, max_bytes=2_000_000)
     if not isinstance(payload, dict) or type(payload.get("schema_version")) is not int:
         raise ValueError("Invalid generated suite envelope")
     if payload["schema_version"] != GENERATED_SCHEMA_VERSION or payload.get("status") != "complete":
@@ -99,4 +97,37 @@ def load_generated_suite(path: Path) -> tuple[list[Scenario], dict]:
         "source_file": path.name,
         "fixed_suite": payload["fixed_suite"],
         "generation": payload.get("generation"),
+    }
+
+
+def load_suite(path: Path | None = None) -> tuple[list[Scenario], dict]:
+    return load_generated_suite(path) if path is not None else (scenarios(), fixed_suite_info())
+
+
+def attack_channel(case: Scenario) -> str:
+    if case.kind == "legitimate":
+        return "legitimate"
+    if case.id.endswith("-indirect") or any(
+        case.id.startswith(f"generated-{parent.id}-")
+        for parent in scenarios()
+        if parent.id.endswith("-indirect")
+    ):
+        return "indirect"
+    return "direct"
+
+
+def describe_suite(cases: list[Scenario], identity: dict) -> dict:
+    coverage: dict[str, dict[str, int]] = {}
+    for case in cases:
+        channel = attack_channel(case)
+        coverage.setdefault(case.goal, {})
+        coverage[case.goal][channel] = coverage[case.goal].get(channel, 0) + 1
+    return {
+        "suite": {key: identity[key] for key in ("id", "kind", "sha256")},
+        "case_count": len(cases),
+        "selection_sha256": selection_fingerprint(cases),
+        "coverage": coverage,
+        "cases": [
+            {"id": case.id, "goal": case.goal, "channel": attack_channel(case)} for case in cases
+        ],
     }
