@@ -269,3 +269,7 @@ Licença MIT.
 ## Geração e avaliações pelo painel
 
 O formulário no final do painel permite informar o nome exato do modelo instalado, gerar de 1 a 24 testes e executar de 1 a 3 repetições da suíte selecionada. A suíte fixa é o padrão. Apenas um trabalho roda por vez. O progresso é atualizado a cada caso; erros e limites permanecem visíveis e as evidências ficam na pasta de artefatos. Ao concluir, o catálogo é atualizado automaticamente. Mantenha o servidor aberto até o fim do trabalho. Os trabalhos em andamento são mantidos em memória e não sobrevivem ao reinício do servidor.
+
+### Avaliar um agente externo
+
+Conecte um agente por HTTP local, mantendo no laboratório a execução das ferramentas sintéticas e a coleta de tentativas, bloqueios e efeitos. Há um agente independente de exemplo com Ollama e duas configurações de proteção, sem API paga. Veja o [guia de integração, execução e comparação](docs/external-agents.md).

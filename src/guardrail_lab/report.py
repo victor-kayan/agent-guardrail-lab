@@ -14,6 +14,8 @@ def render_report(manifest: dict, destination: Path) -> None:
     banner = (
         "SCRIPTED FIXTURE — NO AI. Validates plumbing and enforcement, not model robustness."
         if scripted
+        else "EXTERNAL AGENT EXPERIMENT - lab-observed tool effects."
+        if manifest["provider"] == "external"
         else "LOCAL MODEL EXPERIMENT — results apply only to the recorded scenarios."
     )
     suite = manifest.get("suite", {"id": "legacy-unlabelled", "kind": "legacy"})
@@ -70,7 +72,9 @@ details {{background:#192633; padding:16px; margin:10px 0; border-radius:8px}}
 summary {{cursor:pointer}} pre {{white-space:pre-wrap; overflow-wrap:anywhere; font-size:.85rem}}
 small {{color:#b1c1cf}}
 </style>
-<h1>Agent Guardrail Lab</h1><p class="banner">{banner}</p>
+<h1>Agent Guardrail Lab</h1>
+<p>Agent: {escape(json.dumps(manifest.get("agent"), ensure_ascii=False))}</p>
+<p class="banner">{banner}</p>
 <p>Synthetic finance · MCP tools · prompt instructions versus execution controls.</p>
 <p>{escape(suite_notice)} · {escape(suite["id"])}</p>
 <table><thead><tr><th>Configuration</th><th>Runs</th><th>Runs with violations</th>

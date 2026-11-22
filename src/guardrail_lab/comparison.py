@@ -26,7 +26,7 @@ def index_experiment(manifest: dict) -> tuple[dict, dict]:
         raise ValueError("Unknown suite identity")
     if identity["kind"] == "fixed" and identity["sha256"] != fixed_suite_info()["sha256"]:
         raise ValueError("Unknown fixed suite version")
-    if manifest["provider"] not in {"ollama", "scripted"}:
+    if manifest["provider"] not in {"ollama", "external", "scripted"}:
         raise ValueError("Unknown experiment provider")
     for row in rows:
         case = row["scenario"]
@@ -94,7 +94,7 @@ def compare_manifests(baseline: dict, candidate: dict) -> dict:
         right, right_identity = index_experiment(candidate)
         if left_identity != right_identity or set(left) != set(right):
             raise ValueError("Experiments must use the same suite, scenarios, modes and seeds")
-        if baseline["provider"] != candidate["provider"]:
+        if (baseline["provider"] == "scripted") != (candidate["provider"] == "scripted"):
             raise ValueError("Cannot compare scripted fixtures with model experiments")
         if baseline["parameters"] != candidate["parameters"]:
             raise ValueError(
@@ -146,7 +146,7 @@ def compare_manifests(baseline: dict, candidate: dict) -> dict:
             }
         configuration_changes = [
             name
-            for name in ("model", "model_info", "prompts", "provenance")
+            for name in ("model", "model_info", "prompts", "provenance", "provider", "agent")
             if baseline.get(name) != candidate.get(name)
         ]
         if any(
@@ -158,6 +158,7 @@ def compare_manifests(baseline: dict, candidate: dict) -> dict:
         configurations = {
             label: {
                 "model": manifest.get("model"),
+                "agent": manifest.get("agent"),
                 "model_digest": (manifest.get("model_info") or {}).get("digest"),
                 "commit": manifest.get("provenance", {}).get("commit"),
                 "working_tree_dirty": manifest.get("provenance", {}).get("working_tree_dirty"),

@@ -102,7 +102,7 @@ function renderExplore() {
   const heading = h("div", { class: "selector-row" }, selection("Experimento", item.id,
     experiments.map((entry) => [entry.id, `${entry.name} · ${entry.runs} execuções`]),
     (id) => { state.selected = id; renderExplore(); }),
-    h("div", { class: "selector-info" }, badge(item.provider === "scripted" ? "FIXTURE · SEM IA" : "OLLAMA LOCAL", item.provider === "scripted" ? "warn" : "good")));
+    h("div", { class: "selector-info" }, badge(item.provider === "external" ? "AGENTE EXTERNO" : item.provider === "scripted" ? "FIXTURE · SEM IA" : "OLLAMA LOCAL", item.provider === "scripted" ? "warn" : "good")));
   const results = h("div", { "aria-live": "polite" }, h("p", { class: "empty" }, "Carregando evidências…"));
   $("#content").replaceChildren(heading, results);
   getExperiment(item.id).then((manifest) => {
@@ -133,7 +133,7 @@ function renderResults(manifest, target) {
       h("p", {}, "Contagem observada nos cenários executados."));
   }));
   const context = h("div", { class: "row small muted" }, badge(label, manifest.suite?.kind === "generated" ? "warn" : ""),
-    manifest.provider === "scripted" ? "Roteiro determinístico; não mede robustez de um modelo." : (manifest.model || "Modelo não informado"));
+    manifest.provider === "scripted" ? "Roteiro determinístico; não mede robustez de um modelo." : (manifest.agent ? `${manifest.agent.id} @ ${manifest.agent.revision} � ${manifest.model}` : manifest.model || "Modelo não informado"));
   const body = h("tbody");
   const count = h("div", { class: "table-count", role: "status" });
   const filters = { search: "", mode: "all", verdict: "all" };

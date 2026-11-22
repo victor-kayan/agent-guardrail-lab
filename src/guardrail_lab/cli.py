@@ -51,7 +51,9 @@ def main() -> None:
     dashboard.add_argument("--root", type=Path, default=Path("artifacts"))
     dashboard.add_argument("--port", type=int, default=8765)
     run = commands.choices["run"]
-    run.add_argument("--provider", choices=("ollama", "scripted"), default="ollama")
+    run.add_argument("--provider", choices=("ollama", "scripted", "external"), default="ollama")
+    run.add_argument("--agent-id", help="Stable external agent name")
+    run.add_argument("--agent-revision", help="External code/configuration revision or digest")
     run.add_argument("--mode", choices=(*MODES, "all"), default="all")
     run.add_argument("--scenario", action="append", help="Select a case ID; repeat for several")
     run.add_argument("--repetitions", type=int, default=1)
@@ -130,6 +132,11 @@ def main() -> None:
         else:
             if args.repetitions < 1 or not math.isfinite(args.timeout) or args.timeout <= 0:
                 parser.error("repetitions must be positive and timeout must be finite and positive")
+            if args.provider == "external" and (not args.agent_id or not args.agent_revision):
+                parser.error(
+                    "External agents require --agent-id and --agent-revision; "
+                    "--url is the agent base URL"
+                )
             available, suite_info = load_suite(args.suite_file)
             selected = [case for case in available if not args.scenario or case.id in args.scenario]
             if args.scenario and set(args.scenario) - {case.id for case in selected}:
@@ -162,7 +169,9 @@ def main() -> None:
             manifest = asyncio.run(
                 experiment(
                     selected,
-                    list(MODES) if args.mode == "all" else [args.mode],
+                    (["baseline", "enforced"] if args.provider == "external" else list(MODES))
+                    if args.mode == "all"
+                    else [args.mode],
                     args.repetitions,
                     output,
                     args.provider,
@@ -171,6 +180,7 @@ def main() -> None:
                     args.timeout,
                     progress,
                     suite_info=suite_info,
+                    agent_info={"id": args.agent_id, "revision": args.agent_revision},
                 )
             )
             render_report(manifest, output / "report.html")

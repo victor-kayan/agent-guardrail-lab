@@ -145,20 +145,22 @@ async def execute_agent(
             ]
             return trace
 
-        if provider != "ollama":
+        if provider not in {"ollama", "external"}:
             raise ValueError(f"Unknown provider: {provider}")
         endpoint = local_url(url)
-        messages = [
-            {"role": "system", "content": BASE_PROMPT + (RULES if mode != "baseline" else "")},
-            {"role": "user", "content": scenario.prompt},
-        ]
+        messages = [{"role": "user", "content": scenario.prompt}]
+        if provider == "ollama":
+            messages.insert(
+                0,
+                {"role": "system", "content": BASE_PROMPT + (RULES if mode != "baseline" else "")},
+            )
         trace["messages"] = messages
         async with httpx.AsyncClient(
             timeout=timeout, trust_env=False, follow_redirects=False
         ) as client:
             for _ in range(max_steps):
                 response = await client.post(
-                    endpoint + "/api/chat",
+                    endpoint + ("/step" if provider == "external" else "/api/chat"),
                     json={
                         "model": model,
                         "messages": messages,
@@ -175,8 +177,16 @@ async def execute_agent(
                     },
                 )
                 response.raise_for_status()
+                if len(response.content) > 1_000_000:
+                    raise ValueError("Agent response exceeds 1 MB")
                 payload = response.json()
                 message = payload["message"]
+                if not isinstance(message, dict) or message.get("role") != "assistant":
+                    raise ValueError("Agent must return an assistant message")
+                if not isinstance(message.get("content", ""), str):
+                    raise ValueError("Agent content must be text")
+                if not isinstance(message.get("tool_calls", []), list):
+                    raise ValueError("Agent tool_calls must be a list")
                 trace["tokens"] += payload.get("eval_count", 0)
                 messages.append(message)
                 if payload.get("done_reason") == "length":

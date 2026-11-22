@@ -95,7 +95,7 @@ async def run_case(
         "scenario": scenario.to_dict(),
         "mode": mode,
         "provider": provider,
-        "model": model if provider == "ollama" else "NO_MODEL_SCRIPTED_FIXTURE",
+        "model": model if provider != "scripted" else "NO_MODEL_SCRIPTED_FIXTURE",
         "seed": seed,
         "status": trace["status"],
         "error": error,
@@ -125,8 +125,19 @@ async def experiment(
     timeout: float,
     progress=None,
     suite_info: dict | None = None,
+    agent_info: dict | None = None,
 ) -> dict:
     identity = suite_info or fixed_suite_info()
+    if provider not in {"ollama", "external", "scripted"}:
+        raise ValueError("Unknown provider")
+    if provider == "external":
+        from guardrail_lab.agent import local_url
+
+        local_url(url)
+        if not agent_info or not agent_info.get("id") or not agent_info.get("revision"):
+            raise ValueError("External agents require an ID and revision")
+        if "prompt_only" in modes:
+            raise ValueError("External agents own their prompts; use baseline or enforced")
     if type(repetitions) is not int or repetitions < 1:
         raise ValueError("Repetitions must be a positive integer")
     if not math.isfinite(timeout) or timeout <= 0:
@@ -158,9 +169,14 @@ async def experiment(
         "selection_modes": modes,
         "provenance": provenance(),
         "provider": provider,
-        "model": model if provider == "ollama" else None,
+        "model": model if provider != "scripted" else None,
+        "agent": {**agent_info, "endpoint": url} if provider == "external" else None,
         "model_info": model_info,
-        "prompts": {"base": BASE_PROMPT, "security_rules": RULES},
+        "prompts": (
+            {"base": BASE_PROMPT, "security_rules": RULES}
+            if provider != "external"
+            else {"owner": "external agent"}
+        ),
         "parameters": {
             "num_ctx": 4096,
             "num_predict": 768,

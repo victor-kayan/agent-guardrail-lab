@@ -119,7 +119,9 @@ class ArtifactCatalog:
                                     "suite": identity,
                                     "keys": sorted(indexed),
                                     "parameters": manifest["parameters"],
-                                    "provider": manifest["provider"],
+                                    "provider": "fixture"
+                                    if manifest["provider"] == "scripted"
+                                    else "model",
                                     "inputs": [
                                         {"scenario": row["scenario"], "before": row["before"]}
                                         for _, row in sorted(indexed.items())
