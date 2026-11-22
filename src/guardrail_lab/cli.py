@@ -45,6 +45,11 @@ def main() -> None:
     compare.add_argument("--fail-on-regression", action="store_true")
     report = commands.add_parser("report", help="Regenerate HTML from an existing experiment")
     report.add_argument("manifest", type=Path)
+    dashboard = commands.add_parser(
+        "serve", help="Explore saved artifacts in a local read-only dashboard"
+    )
+    dashboard.add_argument("--root", type=Path, default=Path("artifacts"))
+    dashboard.add_argument("--port", type=int, default=8765)
     run = commands.choices["run"]
     run.add_argument("--provider", choices=("ollama", "scripted"), default="ollama")
     run.add_argument("--mode", choices=(*MODES, "all"), default="all")
@@ -93,6 +98,10 @@ def main() -> None:
             print(f"Report: {(args.output / 'comparison.html').resolve()}")
             if args.fail_on_regression and result["regression_runs"]:
                 sys.exit(3)
+        elif args.command == "serve":
+            from guardrail_lab.dashboard import serve
+
+            serve(args.root, args.port)
         elif args.command == "report":
             manifest = read_json(args.manifest)
             destination = args.manifest.with_name("report.html")

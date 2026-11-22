@@ -63,6 +63,38 @@ O programa só aceita endpoints HTTP de loopback e não segue redirecionamentos.
 
 Em Linux/macOS, use `.venv/bin/python` e `.venv/bin/guardrail-lab`.
 
+## Painel local
+
+```powershell
+.\.venv\Scripts\guardrail-lab.exe serve
+```
+
+Abra [http://127.0.0.1:8765](http://127.0.0.1:8765). O painel lê os resultados de
+`artifacts/` e oferece:
+
+- Visão geral por experimento e configuração de proteção.
+- Busca e filtros de cenários, proteção e resultado.
+- Investigação com linha do tempo das ferramentas, decisões, argumentos e retornos.
+- Visualização da tarefa, documento externo, estado antes/depois e resposta do agente.
+- Comparação visual das execuções compatíveis, usando os mesmos critérios do CLI.
+- Inspeção da suíte fixa e das variações geradas, com cobertura por objetivo e canal.
+
+Para explorar os dados incluídos no repositório, sem executar o modelo:
+
+```powershell
+.\.venv\Scripts\guardrail-lab.exe serve --root examples/results --port 8766
+```
+
+O frontend usa HTML, CSS e JavaScript incluídos no pacote, sem build ou dependências
+de Node.js. O servidor aceita apenas conexões de loopback e operações de leitura;
+a comparação pela interface é calculada em memória. Os textos do modelo são exibidos
+como texto, com CSP e verificações de origem nas requisições.
+
+Use o CLI para gerar e executar novos testes e o botão **Atualizar resultados** para
+incorporar os arquivos ao painel. Para encerrar o servidor iniciado no terminal, use
+`Ctrl+C`. A descoberta limita-se a 100 artefatos e três níveis de subpastas, ignorando
+pastas ocultas, dependências e caches conhecidos. Arquivos inválidos aparecem como avisos.
+
 ## Gerar novos testes com IA local
 
 ```powershell

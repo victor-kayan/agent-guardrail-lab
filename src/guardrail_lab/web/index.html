@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Agent Guardrail Lab</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Pular para o conteúdo</a>
+  <aside class="sidebar">
+    <a class="brand" href="#explore" aria-label="Agent Guardrail Lab, início">
+      <span class="brand-icon" aria-hidden="true">◈</span>
+      <span>AGENT<br><strong>GUARDRAIL LAB</strong></span>
+    </a>
+    <p class="nav-caption">ÁREA DE TRABALHO</p>
+    <nav aria-label="Navegação principal">
+      <button data-view="explore" class="nav-button active"><span aria-hidden="true">▤</span> Experimentos</button>
+      <button data-view="compare" class="nav-button"><span aria-hidden="true">⇄</span> Comparar execuções</button>
+      <button data-view="suites" class="nav-button"><span aria-hidden="true">▦</span> Suítes de testes</button>
+    </nav>
+    <div class="sidebar-bottom"><span class="local-dot"></span> Ambiente local
+      <p>Dados salvos. Sem iniciar o modelo.<br>Sem alterações nos experimentos.</p>
+    </div>
+  </aside>
+  <div class="workspace">
+    <header class="topbar"><span>SEGURANÇA DE AGENTES <span class="separator">/</span> AVALIAÇÕES</span>
+      <button id="refresh" class="button subtle">↻ Atualizar resultados</button>
+    </header>
+    <main id="main" tabindex="-1">
+      <div class="page-heading"><p class="eyebrow">EVIDÊNCIAS, NÃO SUPOSIÇÕES</p>
+        <h1 id="page-title">O que seu agente fez?</h1>
+        <p id="page-description">Explore chamadas, decisões e efeitos reais de cada execução.</p>
+      </div>
+      <div id="notice" role="status" aria-live="polite"></div>
+      <div id="content"><p class="empty">Carregando resultados locais…</p></div>
+    </main>
+    <footer>Agent Guardrail Lab <span>Resultados limitados aos cenários avaliados. Aprovação não comprova segurança geral.</span></footer>
+  </div>
+  <dialog id="case-dialog" aria-labelledby="case-title">
+    <div class="dialog-header"><div><p class="eyebrow">INVESTIGAÇÃO DA EXECUÇÃO</p><h2 id="case-title"></h2></div>
+      <button id="close-dialog" class="icon-button" aria-label="Fechar detalhes">✕</button></div>
+    <div id="case-content"></div>
+  </dialog>
+</body>
+</html>
