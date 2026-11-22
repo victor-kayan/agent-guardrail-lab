@@ -86,11 +86,11 @@ Para explorar os dados incluídos no repositório, sem executar o modelo:
 ```
 
 O frontend usa HTML, CSS e JavaScript incluídos no pacote, sem build ou dependências
-de Node.js. O servidor aceita apenas conexões de loopback e operações de leitura;
+de Node.js. O servidor aceita apenas conexões de loopback e ações locais de geração e avaliação;
 a comparação pela interface é calculada em memória. Os textos do modelo são exibidos
 como texto, com CSP e verificações de origem nas requisições.
 
-Use o CLI para gerar e executar novos testes e o botão **Atualizar resultados** para
+Use o formulário do painel ou o CLI para gerar e executar testes e o botão **Atualizar resultados** para
 incorporar os arquivos ao painel. Para encerrar o servidor iniciado no terminal, use
 `Ctrl+C`. A descoberta limita-se a 100 artefatos e três níveis de subpastas, ignorando
 pastas ocultas, dependências e caches conhecidos. Arquivos inválidos aparecem como avisos.
@@ -265,3 +265,7 @@ e [roteiro de demonstração](docs/demo.md).
 - Adicionar regras de aprovação e fluxos com múltiplas etapas.
 
 Licença MIT.
+
+## Geração e avaliações pelo painel
+
+O formulário no final do painel permite informar o nome exato do modelo instalado, gerar de 1 a 24 testes e executar de 1 a 3 repetições da suíte selecionada. A suíte fixa é o padrão. Apenas um trabalho roda por vez. O progresso é atualizado a cada caso; erros e limites permanecem visíveis e as evidências ficam na pasta de artefatos. Ao concluir, o catálogo é atualizado automaticamente. Mantenha o servidor aberto até o fim do trabalho. Os trabalhos em andamento são mantidos em memória e não sobrevivem ao reinício do servidor.

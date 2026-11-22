@@ -34,7 +34,7 @@ fallback para conjuntos diferentes. Resultados de comparação não são gravado
 
 - Host, Origin e Sec-Fetch-Site são verificados para reduzir acesso de outras origens
   e ataques de DNS rebinding pelo navegador.
-- Não há endpoints de escrita, upload, execução de comandos ou início de modelos.
+- POST /api/jobs inicia geração ou avaliação com o Ollama em loopback, com validação de origem e limites; não aceita comandos de shell, URLs remotas ou caminhos arbitrários.
 - Arquivos arbitrários, bancos e logs não são publicados pelo servidor.
 - Textos de documentos e modelos entram no DOM via `textContent` e nós de texto.
 - CSP permite scripts e estilos locais, bloqueia enquadramento e desativa objetos.

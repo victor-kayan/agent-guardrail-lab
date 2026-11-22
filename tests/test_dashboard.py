@@ -170,3 +170,23 @@ def test_generated_suite_is_validated_before_it_can_be_inspected(tmp_path):
     save_json(tmp_path / "suite.json", suite)
     with pytest.raises(ValueError, match="checksum"):
         catalog.suite(generated["id"])
+
+
+def test_job_routes_enforce_origin_and_validate_inputs(server):
+    _, url = server
+    assert get_json(url + "/api/jobs") == []
+    for headers, payload, expected in [
+        ({"Content-Type": "application/json", "Origin": "https://evil.example"}, {}, 403),
+        ({"Content-Type": "application/json"}, {"action": "shell", "model": "x"}, 400),
+        (
+            {"Content-Type": "application/json"},
+            {"action": "generate", "model": "x", "count": 100},
+            400,
+        ),
+    ]:
+        with pytest.raises(HTTPError) as error:
+            urlopen(
+                Request(url + "/api/jobs", data=json.dumps(payload).encode(), headers=headers),
+                timeout=5,
+            )
+        assert error.value.code == expected

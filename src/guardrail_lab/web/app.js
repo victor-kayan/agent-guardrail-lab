@@ -313,3 +313,48 @@ $(".brand").addEventListener("click", (event) => { event.preventDefault(); state
 $("#refresh").addEventListener("click", () => { state.comparison = null; refresh(); });
 $("#close-dialog").addEventListener("click", () => $("#case-dialog").close());
 refresh();
+
+const jobsPanel = h("section", {class:"panel panel-body"}, h("h2", {}, "Executar com Ollama local"));
+const modelInput = h("input", {value:"qwen3:4b-instruct-2507-q4_K_M", "aria-label":"Modelo Ollama"});
+const countInput = h("input", {type:"number",min:1,max:24,value:6,"aria-label":"Quantidade de testes"});
+const repetitionsInput = h("input", {type:"number",min:1,max:3,value:1,"aria-label":"Repetições"});
+const suiteInput = h("select", {"aria-label":"Suíte para execução"},h("option", {value:"fixed"},"Avaliação fixa · 12 casos"));
+const jobStatus = h("div", {role:"status", "aria-live":"polite"});
+let jobActive = false;
+async function startJob(action) {
+  try {
+    const response = await fetch("/api/jobs", {method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({action,model:modelInput.value,count:Number(countInput.value),
+        repetitions:Number(repetitionsInput.value),suite_id:suiteInput.value})});
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.error);
+    jobActive = true; jobStatus.textContent = "Trabalho iniciado…";
+    pollJobs();
+  } catch(error) { jobStatus.textContent = error.message; }
+}
+const generateButton = h("button", {class:"button",onclick:()=>startJob("generate")},"Gerar testes");
+const evaluateButton = h("button", {class:"button primary",onclick:()=>startJob("evaluate")},"Executar avaliação");
+jobsPanel.append(h("p",{class:"muted small"},"Um trabalho por vez. Avaliações usam a suíte fixa por padrão; a geração salva uma suíte exploratória separada."),
+ h("div", {class:"stack"},h("label",{},"Modelo local",modelInput),h("label",{},"Novos testes (1–24)",countInput),
+ h("label",{},"Repetições (1–3)",repetitionsInput),h("label",{},"Suíte",suiteInput),
+ h("div",{class:"row"},generateButton,evaluateButton),jobStatus));
+$("main").append(jobsPanel);
+async function pollJobs() {
+  try {
+    const jobs = await api("/api/jobs");
+    const job = jobs[jobs.length-1];
+    const wasActive = jobActive;
+    jobActive = Boolean(job && job.status === "running");
+    generateButton.disabled = evaluateButton.disabled = jobActive;
+    if (job) jobStatus.replaceChildren(h("p",{},`${job.action} · ${job.status} · ${job.completed}/${job.total}`),
+      h("progress",{max:job.total,value:job.completed,"aria-label":"Progresso do trabalho"}),h("p",{},job.message));
+    if (wasActive && !jobActive) await refresh();
+    if (state.catalog && !jobActive) {
+      const selected = suiteInput.value;
+      suiteInput.replaceChildren(...state.catalog.suites.map(suite=>h("option",{value:suite.id},suite.name)));
+      if ([...suiteInput.options].some(option=>option.value===selected)) suiteInput.value=selected;
+    }
+  } catch(error) { jobStatus.textContent=error.message; }
+}
+pollJobs();
+setInterval(pollJobs,2000);
