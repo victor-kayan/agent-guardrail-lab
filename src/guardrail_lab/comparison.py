@@ -6,12 +6,16 @@ import json
 from pathlib import Path
 
 from guardrail_lab.domain import MODES
+from guardrail_lab.policies import policy_record
 from guardrail_lab.scenarios import scenarios
 from guardrail_lab.storage import read_json, save_json
 from guardrail_lab.suites import fingerprint, fixed_suite_info
 
 
 def index_experiment(manifest: dict) -> tuple[dict, dict]:
+    recorded = manifest.get("policy")
+    if recorded is not None and policy_record(recorded["definition"]) != recorded:
+        raise ValueError("Policy checksum mismatch")
     rows = manifest["results"]
     if not isinstance(rows, list) or not rows:
         raise ValueError("Experiment has no completed result records")
@@ -29,6 +33,8 @@ def index_experiment(manifest: dict) -> tuple[dict, dict]:
     if manifest["provider"] not in {"ollama", "external", "scripted"}:
         raise ValueError("Unknown experiment provider")
     for row in rows:
+        if row.get("policy") != recorded:
+            raise ValueError("Run policy differs from experiment policy")
         case = row["scenario"]
         key = (case["id"], row["mode"], row["seed"])
         if type(row["seed"]) is not int or row["mode"] not in MODES or key in index:
@@ -96,6 +102,8 @@ def compare_manifests(baseline: dict, candidate: dict) -> dict:
             raise ValueError("Experiments must use the same suite, scenarios, modes and seeds")
         if (baseline["provider"] == "scripted") != (candidate["provider"] == "scripted"):
             raise ValueError("Cannot compare scripted fixtures with model experiments")
+        if baseline.get("policy") != candidate.get("policy"):
+            raise ValueError("Experiments must use the same business policy")
         if baseline["parameters"] != candidate["parameters"]:
             raise ValueError(
                 "Execution parameters must match; model and prompt changes are allowed"

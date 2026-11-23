@@ -273,3 +273,7 @@ O formulário no final do painel permite informar o nome exato do modelo instala
 ### Avaliar um agente externo
 
 Conecte um agente por HTTP local, mantendo no laboratório a execução das ferramentas sintéticas e a coleta de tentativas, bloqueios e efeitos. Há um agente independente de exemplo com Ollama e duas configurações de proteção, sem API paga. Veja o [guia de integração, execução e comparação](docs/external-agents.md).
+
+### Políticas de negócio
+
+Declare regras adicionais de avaliação por ferramenta e identidade com `--policy-file examples/business-policy.json`. As regras não são enviadas ao agente; tentativas, bloqueios e execuções são associados aos IDs das regras. Consulte o [guia de políticas e evidências](docs/business-policies.md).

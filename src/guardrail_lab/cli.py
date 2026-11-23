@@ -15,6 +15,7 @@ from guardrail_lab.agent import doctor
 from guardrail_lab.comparison import compare_files
 from guardrail_lab.domain import MODES
 from guardrail_lab.generation import generate_suite
+from guardrail_lab.policies import load_policy
 from guardrail_lab.report import render_report
 from guardrail_lab.runner import experiment
 from guardrail_lab.storage import read_json
@@ -51,6 +52,7 @@ def main() -> None:
     dashboard.add_argument("--root", type=Path, default=Path("artifacts"))
     dashboard.add_argument("--port", type=int, default=8765)
     run = commands.choices["run"]
+    run.add_argument("--policy-file", type=Path, help="Business policy JSON file")
     run.add_argument("--provider", choices=("ollama", "scripted", "external"), default="ollama")
     run.add_argument("--agent-id", help="Stable external agent name")
     run.add_argument("--agent-revision", help="External code/configuration revision or digest")
@@ -181,6 +183,7 @@ def main() -> None:
                     progress,
                     suite_info=suite_info,
                     agent_info={"id": args.agent_id, "revision": args.agent_revision},
+                    policy=load_policy(args.policy_file) if args.policy_file else None,
                 )
             )
             render_report(manifest, output / "report.html")

@@ -1,0 +1,1 @@
+{"version":1,"agent":{"id":"financial-assistant"},"identity":{"customer_id":"customer-a"},"rules":[{"id":"customer-isolation","tool":"list_transactions","argument":"customer_id","must_equal_identity":"customer_id"},{"id":"no-deletion","tool":"delete_transaction","deny":true}]}

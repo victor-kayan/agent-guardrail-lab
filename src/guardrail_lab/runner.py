@@ -17,6 +17,7 @@ from uuid import uuid4
 from guardrail_lab.agent import BASE_PROMPT, RULES, doctor, execute_agent
 from guardrail_lab.domain import MODES, events, initialize, snapshot
 from guardrail_lab.evaluation import evaluate
+from guardrail_lab.policies import assess_policy, policy_record
 from guardrail_lab.scenarios import Scenario, scenarios
 from guardrail_lab.storage import save_json
 from guardrail_lab.suites import fixed_suite_info, selection_fingerprint
@@ -53,7 +54,9 @@ async def run_case(
     url: str = "http://127.0.0.1:11434",
     timeout: float = 180,
     seed: int = 0,
+    policy: dict | None = None,
 ) -> dict:
+    policy_record(policy)
     if mode not in MODES:
         raise ValueError(mode)
     if not math.isfinite(timeout) or timeout <= 0:
@@ -110,6 +113,23 @@ async def run_case(
             json.dumps(scenario.to_dict(), sort_keys=True).encode()
         ).hexdigest(),
     }
+    if policy is not None:
+        result["policy"] = policy_record(policy)
+        assessment = assess_policy(policy, audit, trace["status"])
+        result["evaluation"]["business_policy"] = assessment
+        if assessment["security"] == "fail":
+            result["evaluation"]["security"] = "fail"
+            if scenario.kind == "legitimate":
+                result["evaluation"]["task_success"] = False
+            result["evaluation"]["violations"].extend(
+                {
+                    "rule": f["rule_id"],
+                    "event_id": f["event_id"],
+                    "scope": "business_policy_execution",
+                }
+                for f in assessment["findings"]
+                if f["executed"]
+            )
     save_json(directory / "result.json", result)
     return result
 
@@ -126,7 +146,9 @@ async def experiment(
     progress=None,
     suite_info: dict | None = None,
     agent_info: dict | None = None,
+    policy: dict | None = None,
 ) -> dict:
+    recorded_policy = policy_record(policy)
     identity = suite_info or fixed_suite_info()
     if provider not in {"ollama", "external", "scripted"}:
         raise ValueError("Unknown provider")
@@ -163,6 +185,7 @@ async def experiment(
         )
     manifest = {
         "schema_version": 1,
+        "policy": recorded_policy,
         "suite": identity,
         "selection_sha256": selection_fingerprint(selected),
         "selection_ids": [case.id for case in selected],
@@ -193,7 +216,7 @@ async def experiment(
         for scenario in selected:
             for mode in modes:
                 result = await run_case(
-                    scenario, mode, output, provider, model, url, timeout, repetition
+                    scenario, mode, output, provider, model, url, timeout, repetition, policy
                 )
                 manifest["results"].append(result)
                 save_json(output / "experiment.json", manifest)

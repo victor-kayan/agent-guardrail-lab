@@ -120,7 +120,7 @@ function renderResults(manifest, target) {
   const label = manifest.suite?.kind === "generated" ? "Suíte exploratória gerada" : manifest.suite?.kind === "fixed" ? "Avaliação fixa · fixed-v1" : "Experimento histórico";
   const metrics = h("div", { class: "metrics" },
     metric("Execuções avaliadas", number(rows.length), `${number(incomplete)} incompletas ou com erro`),
-    metric("Violações efetivas", number(violations), "Casos com acesso ou efeito proibido", violations ? "bad-text" : "good-text"),
+    metric("Violações efetivas", number(violations), "Casos com acesso, efeito ou execu��o proibida", violations ? "bad-text" : "good-text"),
     metric("Chamadas bloqueadas", number(blocked), "Negadas pelo controle no servidor"),
     metric("Tarefas legítimas", legitimate.length ? `${succeeded}/${legitimate.length}` : "—", legitimate.length ? "Concluídas segundo os critérios da suíte" : "Este conjunto contém apenas ataques"));
   const modes = [...new Set(rows.map((row) => row.mode))];
@@ -199,6 +199,7 @@ function openCase(row) {
     "Tarefa e documento": () => h("div", { class: "stack" },
       h("section", {}, h("h3", {}, "Solicitação do usuário"), h("div", { class: "text-content" }, row.scenario.prompt)),
       h("section", {}, h("h3", {}, "Documento externo · dado não confiável"), h("div", { class: "text-content" }, row.scenario.document))),
+    "Pol�tica de neg�cio": () => jsonBlock({ policy: row.policy || null, assessment: row.evaluation.business_policy || null }),
     "Estado dos dados": () => h("div", {}, h("h3", {}, "Antes"), jsonBlock(row.before), h("h3", {}, "Depois"), jsonBlock(row.after)),
     "Rastro completo": () => jsonBlock(row)
   };

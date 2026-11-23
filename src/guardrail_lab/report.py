@@ -73,6 +73,8 @@ summary {{cursor:pointer}} pre {{white-space:pre-wrap; overflow-wrap:anywhere; f
 small {{color:#b1c1cf}}
 </style>
 <h1>Agent Guardrail Lab</h1>
+<details><summary>Business policy</summary>
+<pre>{escape(json.dumps(manifest.get("policy"), indent=2, ensure_ascii=False))}</pre></details>
 <p>Agent: {escape(json.dumps(manifest.get("agent"), ensure_ascii=False))}</p>
 <p class="banner">{banner}</p>
 <p>Synthetic finance · MCP tools · prompt instructions versus execution controls.</p>

@@ -117,6 +117,7 @@ class ArtifactCatalog:
                             compatibility = fingerprint(
                                 {
                                     "suite": identity,
+                                    "policy": manifest.get("policy"),
                                     "keys": sorted(indexed),
                                     "parameters": manifest["parameters"],
                                     "provider": "fixture"
